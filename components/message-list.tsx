@@ -4,10 +4,11 @@ import { useEffect, useRef } from "react"
 
 interface Message {
   id: string
-  userId: string
+  user_id: string
+  room_id: string
   username: string
-  text: string
-  timestamp: string
+  content: string
+  created_at: string
 }
 
 interface MessageListProps {
@@ -39,7 +40,7 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
       ) : (
         <>
           {messages.map((msg) => {
-            const isCurrentUser = msg.userId === currentUserId
+            const isCurrentUser = msg.user_id === currentUserId
             return (
               <div
                 key={msg.id}
@@ -56,10 +57,10 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
                         : "bg-muted text-foreground rounded-bl-none"
                     }`}
                   >
-                    <p className="text-sm break-words">{msg.text}</p>
+                    <p className="text-sm break-words">{msg.content}</p>
                   </div>
                   <p className={`text-xs text-muted-foreground mt-1 ${isCurrentUser ? "text-right" : ""}`}>
-                    {formatTime(msg.timestamp)}
+                    {formatTime(msg.created_at)}
                   </p>
                 </div>
               </div>

@@ -1,22 +1,24 @@
 "use client"
 
 import type React from "react"
-
+import { supabase } from '@/lib/supabase'
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 
 interface LoginFormProps {
-  onLogin: (name: string) => void
+  onLogin: (user: { id: string; name: string }) => void 
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
   const [name, setName] = useState("")
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!name.trim()) {
       setError("Please enter your name")
       return
@@ -25,7 +27,73 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       setError("Name must be less than 20 characters")
       return
     }
-    onLogin(name.trim())
+
+    setLoading(true)
+    setError("")
+
+    try {
+      // mengecek apakah user sudah ada di database
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', name.trim())
+      
+      if (checkError) {
+        console.error('Error checking user:', checkError)
+        setError('Database error. Please try again.')
+        setLoading(false)
+        return
+      }
+
+      let user
+
+      if (existingUsers && existingUsers.length > 0) {
+        user = existingUsers[0]
+        console.log('Existing user found:', user)
+        
+        // Update status online (opsional)
+        await supabase
+          .from('users')
+          .update({ 
+            // is_online: true,
+            // last_seen: new Date().toISOString()
+            last_active: new Date().toISOString()
+          })
+          .eq('id', user.id)
+      } else {
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            username: name.trim(),
+            // is_online: true,
+            // last_seen: new Date().toISOString()
+            last_active: new Date().toISOString()
+          })
+          .select()
+          .single()
+        
+        if (insertError) {
+          console.error('Error creating user:', insertError)
+          setError('Failed to create user. Please try again.')
+          setLoading(false)
+          return
+        }
+
+        user = newUser
+        console.log('New user created:', user)
+      }
+
+      onLogin({
+        id: user.id,
+        name: user.username
+      })
+
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -63,6 +131,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               maxLength={20}
               className="w-full"
               autoFocus
+              disabled={loading} 
             />
             {error && <p className="text-sm text-destructive mt-2">{error}</p>}
           </div>
@@ -70,8 +139,9 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <Button
             type="submit"
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 h-10"
+            disabled={loading || !name.trim()}
           >
-            Join Chat
+            {loading ? 'Joining...' : 'Join Chat'} 
           </Button>
         </form>
 
@@ -81,6 +151,13 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             different users
           </p>
         </div>
+
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
+            <p className="font-semibold text-yellow-800 dark:text-yellow-200">🔧 Dev Mode:</p>
+            <p className="text-yellow-700 dark:text-yellow-300">Check browser console for login status</p>
+          </div>
+        )}
       </Card>
     </div>
   )
