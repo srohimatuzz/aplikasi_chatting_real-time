@@ -124,24 +124,24 @@ export default function Home() {
     }
   }, [user])
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
+if (loading) {
   return (
-    <main className="min-h-screen bg-background">
-      {!user ? (
-        <LoginForm onLogin={handleLogin} />
-      ) : (
-        <ChatContainer user={user} onLogout={handleLogout} />
-      )}
-    </main>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#0a1a1a] via-[#0d1f1f] to-[#0f2424]">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+        <p className="text-white">Loading...</p>
+      </div>
+    </div>
   )
+}
+
+return (
+  <main className="min-h-screen bg-gradient-to-br from-[#0a1a1a] via-[#0d1f1f] to-[#0f2424]">
+    {!user ? (
+      <LoginForm onLogin={handleLogin} />
+    ) : (
+      <ChatContainer user={user} onLogout={handleLogout} />
+    )}
+  </main>
+)
 }

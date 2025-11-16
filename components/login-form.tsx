@@ -2,13 +2,57 @@
 
 import type React from "react"
 import { supabase } from '@/lib/supabase'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 
 interface LoginFormProps {
   onLogin: (user: { id: string; name: string }) => void 
+}
+
+// Komponen untuk bola animasi
+const AnimatedBall = ({ delay = 0 }) => {
+  const [position, setPosition] = useState({
+    x: Math.random() * 100,
+    y: Math.random() * 100
+  })
+
+  useEffect(() => {
+    const duration = 5000 + Math.random() * 2000
+    
+    const animate = () => {
+      setPosition({
+        x: Math.random() * 100,
+        y: Math.random() * 100
+      })
+    }
+
+    const timer = setTimeout(() => {
+      animate()
+      const interval = setInterval(animate, duration)
+      return () => clearInterval(interval)
+    }, delay)
+
+    return () => clearTimeout(timer)
+  }, [delay])
+
+  const size = 200 + Math.random() * 300
+
+  return (
+    <div
+      className="absolute rounded-full blur-3xl opacity-30"
+      style={{
+        left: `${position.x}%`,
+        top: `${position.y}%`,
+        width: `${size}px`,
+        height: `${size}px`,
+        background: `radial-gradient(circle, rgba(16, 185, 129, 0.8) 0%, rgba(5, 150, 105, 0.6) 50%, transparent 70%)`,
+        transition: `all ${5000 + Math.random() * 2000}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+        transform: 'translate(-50%, -50%)'
+      }}
+    />
+  )
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
@@ -55,8 +99,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         await supabase
           .from('users')
           .update({ 
-            // is_online: true,
-            // last_seen: new Date().toISOString()
             last_active: new Date().toISOString()
           })
           .eq('id', user.id)
@@ -65,8 +107,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           .from('users')
           .insert({
             username: name.trim(),
-            // is_online: true,
-            // last_seen: new Date().toISOString()
             last_active: new Date().toISOString()
           })
           .select()
@@ -96,12 +136,26 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     }
   }
 
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      <Card className="w-full max-w-md p-8 shadow-lg">
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && name.trim() && !loading) {
+      handleSubmit(e as any)
+    }
+  }
+
+return (
+    <div className="relative flex items-center justify-center min-h-screen bg-black overflow-hidden">
+      {/* Animated Background Balls */}
+      <AnimatedBall delay={0} />
+      <AnimatedBall delay={1000} />
+      <AnimatedBall delay={2000} />
+      <AnimatedBall delay={3000} />
+      <AnimatedBall delay={4000} />
+
+      {/* Login Card */}
+      <Card className="relative z-10 w-full max-w-md p-8 shadow-2xl bg-gradient-to-b from-[#0f2626] to-[#000000] border-r border-[#1a3535] backdrop-blur-sm">
         <div className="text-center mb-8">
-          <div className="inline-block p-3 bg-primary/10 rounded-lg mb-4">
-            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="inline-block p-3 bg-emerald-600/20 rounded-lg mb-4">
+            <svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -110,13 +164,13 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Chat</h1>
-          <p className="text-muted-foreground">Real-time messaging application</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome to Chat</h1>
+          <p className="text-gray-400">Real-time messaging application</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
               Your Name
             </label>
             <Input
@@ -128,37 +182,38 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 setName(e.target.value)
                 setError("")
               }}
+              onKeyPress={handleKeyPress}
               maxLength={20}
-              className="w-full"
+              className="w-full bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-500"
               autoFocus
               disabled={loading} 
             />
-            {error && <p className="text-sm text-destructive mt-2">{error}</p>}
+            {error && <p className="text-sm text-red-400 mt-2">{error}</p>}
           </div>
 
           <Button
-            type="submit"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 h-10"
+            onClick={handleSubmit}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 h-10"
             disabled={loading || !name.trim()}
           >
             {loading ? 'Joining...' : 'Join Chat'} 
           </Button>
-        </form>
+        </div>
 
-        <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">
+        <div className="mt-8 pt-6 border-t border-gray-800">
+          <p className="text-xs text-gray-500 text-center">
             <span className="font-semibold">Tip:</span> Open multiple tabs or browser windows to test messaging with
             different users
           </p>
         </div>
 
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
-            <p className="font-semibold text-yellow-800 dark:text-yellow-200">🔧 Dev Mode:</p>
-            <p className="text-yellow-700 dark:text-yellow-300">Check browser console for login status</p>
-          </div>
-        )}
+        <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-800/50 rounded text-xs">
+          <p className="font-semibold text-yellow-400">🔧 Dev Mode:</p>
+          <p className="text-yellow-500">Check browser console for login status</p>
+        </div>
       </Card>
     </div>
   )
 }
+
+export default LoginForm
